@@ -36,7 +36,7 @@ public class TelegramStocksBot extends TelegramLongPollingBot {
 
             SendMessage message = new SendMessage();
             message.setChatId(chatId);
-            message.setText("ЕБАТЬ ТЫ ЛОХ");
+            message.setText("mock");
 
             try {
                 execute(message);
