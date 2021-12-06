@@ -18,6 +18,7 @@ public class StockInfoServiceImpl implements StockService {
     private final OpenApi api;
     private final StockMapper stockMapper;
 
+    @Override
     public List<StockDto> getStockInfo() {
         List<StockDto> instruments;
         try {

@@ -6,9 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @Slf4j
 @SpringBootApplication
-public class TradeRobotApplication {
+public class StocksApiApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(TradeRobotApplication.class, args);
+        SpringApplication.run(StocksApiApplication.class, args);
     }
 }
