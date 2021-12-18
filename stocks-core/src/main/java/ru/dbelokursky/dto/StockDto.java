@@ -1,12 +1,18 @@
 package ru.dbelokursky.dto;
 
+import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
+import java.io.Serial;
 import java.io.Serializable;
 
+@FieldNameConstants
+@Builder
 @Data
 public class StockDto implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

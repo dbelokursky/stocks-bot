@@ -1,14 +1,17 @@
 package ru.dbelokursky.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.dbelokursky.dto.StockDto;
 import ru.dbelokursky.mappers.StockMapper;
 import ru.tinkoff.invest.openapi.OpenApi;
 
-import java.util.List;
-import java.util.concurrent.ExecutionException;
+import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -17,19 +20,26 @@ public class StockInfoServiceImpl implements StockService {
 
     private final OpenApi api;
     private final StockMapper stockMapper;
+    private final Map<String, StockDto> stocks = new HashMap<>(2000);
+
+    @PostConstruct
+    @SneakyThrows
+    private void init() {
+        api.getMarketContext().getMarketStocks().get().getInstruments().stream()
+                .map(stockMapper::marketInstrumentToStockDto)
+                .forEach(s -> stocks.put(s.getTicker(), s));
+    }
+
 
     @Override
-    public List<StockDto> getStockInfo() {
-        List<StockDto> instruments;
-        try {
-            instruments = api.getMarketContext().getMarketStocks().get().getInstruments().stream()
-                    .map(stockMapper::marketInstrumentToStockDto)
-                    .toList();
+    @SneakyThrows
+    public Stream<StockDto> getAllStocksInfo() {
+        return api.getMarketContext().getMarketStocks().get().getInstruments().stream()
+                .map(stockMapper::marketInstrumentToStockDto);
+    }
 
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Во время получения информации о бумагах произошла ошибка: {}", e.getLocalizedMessage(), e);
-            throw new RuntimeException(e);
-        }
-        return instruments;
+    @Override
+    public StockDto getStockInfoByTicker(String ticker) {
+        return stocks.get(ticker);
     }
 }
