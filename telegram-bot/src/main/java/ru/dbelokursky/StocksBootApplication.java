@@ -1,7 +1,6 @@
 package ru.dbelokursky;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,8 +13,11 @@ import ru.dbelokursky.bot.TelegramStocksBot;
 @SpringBootApplication
 public class StocksBootApplication implements CommandLineRunner {
 
-    @Autowired
-    private TelegramStocksBot telegramBot;
+    private final TelegramStocksBot telegramBot;
+
+    public StocksBootApplication(TelegramStocksBot telegramBot) {
+        this.telegramBot = telegramBot;
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(StocksBootApplication.class, args);

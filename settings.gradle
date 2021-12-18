@@ -1,4 +1,5 @@
 rootProject.name = 'stocks-boot'
 include 'telegram-bot'
 include 'stocks-api'
+include 'stocks-core'
 
