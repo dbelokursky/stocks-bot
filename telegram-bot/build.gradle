@@ -32,9 +32,10 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'ch.qos.logback:logback-classic'
-    implementation 'org.telegram:telegrambots:5.4.0'
+    implementation 'org.telegram:telegrambots:5.6.0'
     implementation 'ru.tinkoff.invest:openapi-java-sdk-java8:0.5.1'
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

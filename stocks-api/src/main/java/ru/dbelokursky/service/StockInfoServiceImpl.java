@@ -10,8 +10,8 @@ import ru.tinkoff.invest.openapi.OpenApi;
 
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -32,14 +32,12 @@ public class StockInfoServiceImpl implements StockService {
 
 
     @Override
-    @SneakyThrows
-    public Stream<StockDto> getAllStocksInfo() {
-        return api.getMarketContext().getMarketStocks().get().getInstruments().stream()
-                .map(stockMapper::marketInstrumentToStockDto);
+    public Map<String, StockDto> getAllStocksInfo() {
+        return stocks;
     }
 
     @Override
-    public StockDto getStockInfoByTicker(String ticker) {
-        return stocks.get(ticker);
+    public List<StockDto> getStockInfoByTicker(String ticker) {
+        return List.of(stocks.get(ticker));
     }
 }

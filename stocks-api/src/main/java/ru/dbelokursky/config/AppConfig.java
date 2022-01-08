@@ -1,7 +1,8 @@
 package ru.dbelokursky.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.tinkoff.invest.openapi.OpenApi;
@@ -9,13 +10,14 @@ import ru.tinkoff.invest.openapi.okhttp.OkHttpOpenApi;
 
 @Slf4j
 @Configuration
+@EnableConfigurationProperties({OpenApiProperties.class})
+@RequiredArgsConstructor
 public class AppConfig {
 
-    @Value("${app.openapi.token}")
-    private String openapiToken;
+    private final OpenApiProperties openApiConfig;
 
     @Bean
     public OpenApi openApi() {
-        return new OkHttpOpenApi(openapiToken, Boolean.TRUE);
+        return new OkHttpOpenApi(openApiConfig.getToken(), Boolean.TRUE);
     }
 }

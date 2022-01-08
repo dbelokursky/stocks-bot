@@ -2,12 +2,13 @@ package ru.dbelokursky.service;
 
 import ru.dbelokursky.dto.StockDto;
 
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.Map;
 
 public interface StockService {
 
-    Stream<StockDto> getAllStocksInfo();
+    Map<String, StockDto> getAllStocksInfo();
 
-    StockDto getStockInfoByTicker(String ticker);
+    List<StockDto> getStockInfoByTicker(String ticker);
 
 }

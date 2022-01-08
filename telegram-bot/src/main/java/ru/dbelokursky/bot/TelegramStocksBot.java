@@ -1,10 +1,10 @@
 package ru.dbelokursky.bot;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -15,8 +15,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import ru.dbelokursky.dto.BotMessage;
-import ru.dbelokursky.dto.StockDto;
+import ru.dbelokursky.config.TelegramProperties;
+import ru.dbelokursky.dto.CallbackData;
+import ru.dbelokursky.dto.StockRequestMessage;
+import ru.dbelokursky.enums.CommandEnum;
 import ru.dbelokursky.enums.TickerEnum;
 
 import java.util.ArrayList;
@@ -25,34 +27,38 @@ import java.util.Optional;
 
 import static ru.dbelokursky.config.RabbitmqConfig.REQUEST_EXCHANGE_NAME;
 import static ru.dbelokursky.config.RabbitmqConfig.REQUEST_ROUTING_KEY;
+import static ru.dbelokursky.enums.CommandEnum.GET_STOCK_INFO;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class TelegramStocksBot extends TelegramLongPollingBot {
 
-    private static final String GET_STOCK_PRICE_MESSAGE = """
-            Для получения информации о бумаге 
-            введите название тикера (например IDCC)""";
+    private static final String GET_STOCK_PRICE_MESSAGE =
+            """
+                    Для получения информации о стоимости бумаги 
+                    введите название тикера (например IDCC)
+                    """;
 
-
-    @Value("${app.telegram.token}")
-    private String telegramBotToken;
-
-    @Value("${app.telegram.name}")
-    private String telegramBotName;
+    private static final String GET_STOCK_INFO_MESSAGE =
+            """
+                    Для получения информации о бумаге
+                    введите название тикера (например IDCC)
+                    """;
 
     private final RabbitTemplate template;
+    private final TelegramProperties telegramProperties;
+    private final ObjectMapper objectMapper;
 
 
     @Override
     public String getBotUsername() {
-        return telegramBotName;
+        return telegramProperties.getName();
     }
 
     @Override
     public String getBotToken() {
-        return telegramBotToken;
+        return telegramProperties.getToken();
     }
 
     @Override
@@ -67,13 +73,14 @@ public class TelegramStocksBot extends TelegramLongPollingBot {
     @SneakyThrows
     private void handleCallback(CallbackQuery callbackQuery) {
         Message message = callbackQuery.getMessage();
-        String data = callbackQuery.getData();
-        BotMessage botMessage = BotMessage.builder()
+        CallbackData data = objectMapper.readValue(callbackQuery.getData(), CallbackData.class);
+        StockRequestMessage stocksMessage = StockRequestMessage.builder()
                 .chatId(message.getChatId().toString())
-                .stockDto(StockDto.builder().ticker(data).build())
+                .ticker(data.getTicker())
+                .command(data.getCommand())
                 .build();
 
-        template.convertAndSend(REQUEST_EXCHANGE_NAME, REQUEST_ROUTING_KEY, botMessage);
+        template.convertAndSend(REQUEST_EXCHANGE_NAME, REQUEST_ROUTING_KEY, stocksMessage);
 
 
     }
@@ -86,10 +93,36 @@ public class TelegramStocksBot extends TelegramLongPollingBot {
                     .findAny();
 
             if (commandEntity.isPresent()) {
-                String command = message.getText().substring(commandEntity.get().getOffset(), commandEntity.get().getLength());
+                CommandEnum command = CommandEnum.getEnumByCommandName(message.getText()
+                        .substring(commandEntity.get().getOffset(), commandEntity.get().getLength()));
 
                 switch (command) {
-                    case "/get_stock_price" -> {
+                    case GET_STOCK_INFO -> {
+                        List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
+
+                        for (TickerEnum tickerEnum : TickerEnum.values()) {
+                            CallbackData callbackData = CallbackData.builder()
+                                    .ticker(tickerEnum.ticker)
+                                    .command(GET_STOCK_INFO.getName())
+                                    .build();
+
+                            buttons.add(List.of(
+                                    InlineKeyboardButton.builder()
+                                            .text(String.format("%s (%s)", tickerEnum.description, tickerEnum.ticker))
+                                            .callbackData(objectMapper.writeValueAsString(callbackData))
+                                            .build()
+                            ));
+                        }
+
+                        String chatId = message.getChatId().toString();
+                        execute(SendMessage.builder()
+                                .chatId(chatId)
+                                .text(GET_STOCK_INFO_MESSAGE)
+                                .replyMarkup(InlineKeyboardMarkup.builder().keyboard(buttons).build())
+                                .build());
+
+                    }
+                    case GET_STOCK_PRICE -> {
                         List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
 
                         for (TickerEnum tickerEnum : TickerEnum.values()) {
@@ -104,12 +137,10 @@ public class TelegramStocksBot extends TelegramLongPollingBot {
                         String chatId = message.getChatId().toString();
                         execute(SendMessage.builder()
                                 .chatId(chatId)
-                                .text(GET_STOCK_PRICE_MESSAGE)
+                                .text(GET_STOCK_INFO_MESSAGE)
                                 .replyMarkup(InlineKeyboardMarkup.builder().keyboard(buttons).build())
                                 .build());
-
                     }
-
                 }
             }
         }
@@ -127,5 +158,4 @@ public class TelegramStocksBot extends TelegramLongPollingBot {
             throw new RuntimeException(e);
         }
     }
-
 }
